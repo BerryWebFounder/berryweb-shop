@@ -1,6 +1,7 @@
 package com.berryweb.shop.dto;
 
 import com.berryweb.shop.entity.Product;
+import com.berryweb.shop.entity.ProductOptionGroup;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;

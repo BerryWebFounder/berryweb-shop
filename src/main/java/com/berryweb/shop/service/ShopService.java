@@ -1,9 +1,21 @@
 package com.berryweb.shop.service;
 
-import jakarta.transaction.Transactional;
+import com.berryweb.shop.dto.ShopDto;
+import com.berryweb.shop.dto.UserServiceDto;
+import com.berryweb.shop.entity.Product;
+import com.berryweb.shop.entity.Shop;
+import com.berryweb.shop.exception.CustomException;
+import com.berryweb.shop.exception.ErrorCode;
+import com.berryweb.shop.repository.ProductRepository;
+import com.berryweb.shop.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
