@@ -35,7 +35,7 @@ public class ProductService {
     private final ProductOptionGroupRepository productOptionGroupRepository;
     private final ProductOptionRepository productOptionRepository;
     private final ReviewRepository reviewRepository;
-    private final UserServiceClient userServiceClient;
+    private final UserServiceHelper userServiceHelper;
     private final FileService fileService;
 
     public Page<ProductDto.ProductSummary> getProductsByShop(Long shopId, Pageable pageable, String token) {
@@ -160,7 +160,8 @@ public class ProductService {
         Shop shop = shopRepository.findByIdAndIsActiveTrue(request.getShopId())
                 .orElseThrow(() -> new CustomException(ErrorCode.SHOP_NOT_FOUND));
 
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token).getData();
+        // 사용자 정보 조회
+        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
 
         // 상점 소유자이거나 ADMIN만 상품 생성 가능
         if (!shop.getOwnerUserId().equals(userId) &&

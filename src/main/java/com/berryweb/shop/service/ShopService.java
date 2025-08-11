@@ -1,5 +1,6 @@
 package com.berryweb.shop.service;
 
+import com.berryweb.shop.client.UserServiceClient;
 import com.berryweb.shop.dto.ShopDto;
 import com.berryweb.shop.dto.UserServiceDto;
 import com.berryweb.shop.entity.Product;
@@ -25,12 +26,12 @@ public class ShopService {
 
     private final ShopRepository shopRepository;
     private final ProductRepository productRepository;
-    private final UserServiceClient userServiceClient;
+    private final UserServiceHelper userServiceHelper;
 
     public Page<ShopDto.ShopInfo> getAllShops(Pageable pageable, String token) {
         return shopRepository.findByIsActiveTrueOrderByCreatedAtDesc(pageable)
                 .map(shop -> {
-                    UserServiceDto.UserInfo ownerInfo = userServiceClient.getUserInfo(shop.getOwnerUserId(), token);
+                    UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
                     long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
                     return ShopDto.ShopInfo.builder()
@@ -59,7 +60,7 @@ public class ShopService {
         Shop shop = shopRepository.findByIdAndIsActiveTrue(shopId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SHOP_NOT_FOUND));
 
-        UserServiceDto.UserInfo ownerInfo = userServiceClient.getUserInfo(shop.getOwnerUserId(), token);
+        UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
         long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
         return ShopDto.ShopInfo.builder()
@@ -85,7 +86,7 @@ public class ShopService {
 
     @Transactional
     public ShopDto.ShopInfo createShop(ShopDto.CreateShopRequest request, String token, Long userId) {
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token);
+        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
 
         if (userInfo == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
@@ -134,7 +135,7 @@ public class ShopService {
         Shop shop = shopRepository.findByIdAndIsActiveTrue(shopId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SHOP_NOT_FOUND));
 
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token);
+        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
 
         // 상점 소유자이거나 ADMIN만 수정 가능
         if (!shop.getOwnerUserId().equals(userId) &&
@@ -168,7 +169,7 @@ public class ShopService {
         shop.setUpdatedBy(userId);
         shop = shopRepository.save(shop);
 
-        UserServiceDto.UserInfo ownerInfo = userServiceClient.getUserInfo(shop.getOwnerUserId(), token);
+        UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
         long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
         return ShopDto.ShopInfo.builder()
@@ -194,7 +195,7 @@ public class ShopService {
 
     public List<ShopDto.ShopInfo> getMyShops(String token, Long userId) {
         List<Shop> shops = shopRepository.findByOwnerUserIdAndIsActiveTrue(userId);
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token);
+        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
 
         return shops.stream()
                 .map(shop -> {
@@ -226,7 +227,7 @@ public class ShopService {
     public Page<ShopDto.ShopInfo> searchShops(String keyword, Pageable pageable, String token) {
         return shopRepository.findByNameContainingAndIsActiveTrueOrderByCreatedAtDesc(keyword, pageable)
                 .map(shop -> {
-                    UserServiceDto.UserInfo ownerInfo = userServiceClient.getUserInfo(shop.getOwnerUserId(), token);
+                    UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
                     long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
                     return ShopDto.ShopInfo.builder()

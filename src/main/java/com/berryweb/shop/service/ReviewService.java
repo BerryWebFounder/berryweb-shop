@@ -1,16 +1,16 @@
 package com.berryweb.shop.service;
 
+import com.berryweb.shop.client.UserServiceClient;
 import com.berryweb.shop.dto.ReviewDto;
+import com.berryweb.shop.dto.ShopDto;
 import com.berryweb.shop.dto.UserServiceDto;
 import com.berryweb.shop.entity.Product;
 import com.berryweb.shop.entity.Review;
 import com.berryweb.shop.entity.ReviewHelpful;
+import com.berryweb.shop.entity.Shop;
 import com.berryweb.shop.exception.CustomException;
 import com.berryweb.shop.exception.ErrorCode;
-import com.berryweb.shop.repository.ProductRepository;
-import com.berryweb.shop.repository.ReviewHelpfulRepository;
-import com.berryweb.shop.repository.ReviewImageRepository;
-import com.berryweb.shop.repository.ReviewRepository;
+import com.berryweb.shop.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,7 +33,7 @@ public class ReviewService {
     private final ProductRepository productRepository;
     private final ReviewImageRepository reviewImageRepository;
     private final ReviewHelpfulRepository reviewHelpfulRepository;
-    private final UserServiceClient userServiceClient;
+    private final UserServiceHelper userServiceHelper;
     private final FileService fileService;
 
     public Page<ReviewDto.ReviewInfo> getReviewsByProduct(Long productId, Pageable pageable, String token, Long userId) {
@@ -101,7 +101,8 @@ public class ReviewService {
         Review review = reviewRepository.findByIdAndIsActiveTrue(reviewId)
                 .orElseThrow(() -> new CustomException(ErrorCode.REVIEW_NOT_FOUND));
 
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token);
+        // 사용자 정보 조회
+        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
 
         // 작성자이거나 ADMIN만 삭제 가능
         if (!review.getUserId().equals(userId) &&
@@ -135,7 +136,8 @@ public class ReviewService {
     }
 
     private ReviewDto.ReviewInfo buildReviewInfo(Review review, String token, Long userId) {
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(review.getUserId(), token);
+        // 사용자 정보 조회
+        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(review.getUserId(), token);
         boolean isHelpful = reviewHelpfulRepository.existsByReviewAndUserId(review, userId);
 
         List<ReviewDto.ReviewImageInfo> images = reviewImageRepository.findByReviewOrderBySortOrderAsc(review)
