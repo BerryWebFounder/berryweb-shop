@@ -1,5 +1,6 @@
 package com.berryweb.shop.service;
 
+import com.berryweb.shop.client.UserServiceClient;
 import com.berryweb.shop.dto.ProductDto;
 import com.berryweb.shop.dto.UserServiceDto;
 import com.berryweb.shop.entity.Product;
@@ -159,7 +160,7 @@ public class ProductService {
         Shop shop = shopRepository.findByIdAndIsActiveTrue(request.getShopId())
                 .orElseThrow(() -> new CustomException(ErrorCode.SHOP_NOT_FOUND));
 
-        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token);
+        UserServiceDto.UserInfo userInfo = userServiceClient.getUserInfo(userId, token).getData();
 
         // 상점 소유자이거나 ADMIN만 상품 생성 가능
         if (!shop.getOwnerUserId().equals(userId) &&

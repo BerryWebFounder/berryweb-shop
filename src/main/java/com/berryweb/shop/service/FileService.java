@@ -1,8 +1,31 @@
 package com.berryweb.shop.service;
 
+import com.berryweb.shop.dto.ProductDto;
+import com.berryweb.shop.dto.ReviewDto;
+import com.berryweb.shop.entity.Product;
+import com.berryweb.shop.entity.ProductImage;
+import com.berryweb.shop.entity.Review;
+import com.berryweb.shop.entity.ReviewImage;
+import com.berryweb.shop.exception.CustomException;
+import com.berryweb.shop.exception.ErrorCode;
+import com.berryweb.shop.repository.ProductImageRepository;
+import com.berryweb.shop.repository.ReviewImageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
