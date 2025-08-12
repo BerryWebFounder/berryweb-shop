@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/v1/shops/{shopId}/products")
+@RequestMapping("/v1/shops/{shopId}/products")
 @RequiredArgsConstructor
 @Slf4j
 public class ProductController {

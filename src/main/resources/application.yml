@@ -28,7 +28,9 @@ spring:
       max-request-size: 50MB
 
 server:
-  port: 8083
+  port: ${SERVER_PORT:8083}
+  servlet:
+    context-path: /api
 
 management:
   endpoints:
