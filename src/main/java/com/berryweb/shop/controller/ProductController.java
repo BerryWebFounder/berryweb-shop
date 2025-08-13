@@ -26,19 +26,20 @@ public class ProductController {
             @PathVariable Long shopId,
             @RequestParam(required = false) String search,
             Pageable pageable,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
 
-        String authToken = token.replace("Bearer ", "");
+        String authToken = token != null ? token.replace("Bearer ", "") : "";
         Page<ProductDto.ProductSummary> products = productService.getProductsByShop(shopId, pageable, authToken);
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 
+    // 상품 생성은 인증 필요하므로 required = true 유지
     @PostMapping
     public ResponseEntity<ApiResponse<ProductDto.ProductInfo>> createProduct(
             @PathVariable Long shopId,
             @Valid @RequestBody ProductDto.CreateProductRequest request,
             @RequestParam(value = "images", required = false) MultipartFile[] images,
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String token, // 필수 유지
             @CurrentUser Long userId) {
 
         String authToken = token.replace("Bearer ", "");

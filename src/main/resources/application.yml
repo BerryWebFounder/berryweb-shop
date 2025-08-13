@@ -39,7 +39,7 @@ management:
         include: health,info,metrics
 
 jwt:
-  secret: ${JWT_SECRET:your-secret-key-here-make-it-long-enough-for-security}
+  secret: ${JWT_SECRET:bXktc3VwZXItc2VjcmV0LWp3dC1zaWduaW5nLWtleS1mb3ItbWljcm9zZXJ2aWNlcy1zaG91bGQtYmUtdmVyeS1sb25nLTI1Ni1iaXRz}
 
 services:
   user-service:

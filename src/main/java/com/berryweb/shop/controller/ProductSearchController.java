@@ -21,9 +21,9 @@ public class ProductSearchController {
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductDto.ProductInfo>> getProductById(
             @PathVariable Long productId,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
 
-        String authToken = token.replace("Bearer ", "");
+        String authToken = token != null ? token.replace("Bearer ", "") : "";
         ProductDto.ProductInfo product = productService.getProductById(productId, authToken);
         return ResponseEntity.ok(ApiResponse.success(product));
     }
@@ -32,9 +32,9 @@ public class ProductSearchController {
     public ResponseEntity<ApiResponse<Page<ProductDto.ProductSummary>>> searchProducts(
             @RequestParam String keyword,
             Pageable pageable,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
 
-        String authToken = token.replace("Bearer ", "");
+        String authToken = token != null ? token.replace("Bearer ", "") : "";
         Page<ProductDto.ProductSummary> products = productService.searchProducts(keyword, pageable, authToken);
         return ResponseEntity.ok(ApiResponse.success(products));
     }
@@ -42,9 +42,9 @@ public class ProductSearchController {
     @GetMapping("/featured")
     public ResponseEntity<ApiResponse<Page<ProductDto.ProductSummary>>> getFeaturedProducts(
             Pageable pageable,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
 
-        String authToken = token.replace("Bearer ", "");
+        String authToken = token != null ? token.replace("Bearer ", "") : "";
         Page<ProductDto.ProductSummary> products = productService.getFeaturedProducts(pageable, authToken);
         return ResponseEntity.ok(ApiResponse.success(products));
     }

@@ -26,9 +26,10 @@ public class ShopController {
     public ResponseEntity<ApiResponse<Page<ShopDto.ShopInfo>>> getAllShops(
             @RequestParam(required = false) String search,
             Pageable pageable,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
 
-        String authToken = token.replace("Bearer ", "");
+        // 토큰이 있으면 Bearer 제거, 없으면 빈 문자열
+        String authToken = token != null ? token.replace("Bearer ", "") : "";
         Page<ShopDto.ShopInfo> shops;
 
         if (search != null && !search.trim().isEmpty()) {
@@ -43,16 +44,17 @@ public class ShopController {
     @GetMapping("/{shopId}")
     public ResponseEntity<ApiResponse<ShopDto.ShopInfo>> getShopById(
             @PathVariable Long shopId,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
 
-        String authToken = token.replace("Bearer ", "");
+        String authToken = token != null ? token.replace("Bearer ", "") : "";
         ShopDto.ShopInfo shop = shopService.getShopById(shopId, authToken);
         return ResponseEntity.ok(ApiResponse.success(shop));
     }
 
+    // 인증이 필요한 엔드포인트들은 required = true 유지
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<List<ShopDto.ShopInfo>>> getMyShops(
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String token, // 필수 유지
             @CurrentUser Long userId) {
 
         String authToken = token.replace("Bearer ", "");
@@ -63,7 +65,7 @@ public class ShopController {
     @PostMapping
     public ResponseEntity<ApiResponse<ShopDto.ShopInfo>> createShop(
             @Valid @RequestBody ShopDto.CreateShopRequest request,
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String token, // 필수 유지
             @CurrentUser Long userId) {
 
         String authToken = token.replace("Bearer ", "");
@@ -75,7 +77,7 @@ public class ShopController {
     public ResponseEntity<ApiResponse<ShopDto.ShopInfo>> updateShop(
             @PathVariable Long shopId,
             @Valid @RequestBody ShopDto.UpdateShopRequest request,
-            @RequestHeader("Authorization") String token,
+            @RequestHeader("Authorization") String token, // 필수 유지
             @CurrentUser Long userId) {
 
         String authToken = token.replace("Bearer ", "");
