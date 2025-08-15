@@ -1,6 +1,5 @@
 package com.berryweb.shop.service;
 
-import com.berryweb.shop.client.UserServiceClient;
 import com.berryweb.shop.dto.ShopDto;
 import com.berryweb.shop.dto.UserServiceDto;
 import com.berryweb.shop.entity.Product;
@@ -15,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -31,7 +31,10 @@ public class ShopService {
     public Page<ShopDto.ShopInfo> getAllShops(Pageable pageable, String token) {
         return shopRepository.findByIsActiveTrueOrderByCreatedAtDesc(pageable)
                 .map(shop -> {
-                    UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+                    UserServiceDto.UserInfo ownerInfo = null;
+                    if (shop.getOwnerUserId() != null && token != null && !token.trim().isEmpty()) {
+                        ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+                    }
                     long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
                     return ShopDto.ShopInfo.builder()
@@ -60,7 +63,10 @@ public class ShopService {
         Shop shop = shopRepository.findByIdAndIsActiveTrue(shopId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SHOP_NOT_FOUND));
 
-        UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+        UserServiceDto.UserInfo ownerInfo = null;
+        if (shop.getOwnerUserId() != null && token != null && !token.trim().isEmpty()) {
+            ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+        }
         long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
         return ShopDto.ShopInfo.builder()
@@ -86,11 +92,22 @@ public class ShopService {
 
     @Transactional
     public ShopDto.ShopInfo createShop(ShopDto.CreateShopRequest request, String token, Long userId) {
-        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
+        if (userId == null) {
+            throw new CustomException(ErrorCode.UNAUTHORIZED, "인증이 필요합니다.");
+        }
+
+        UserServiceDto.UserInfo userInfo = null;
+        if (token != null && !token.trim().isEmpty()) {
+            userInfo = userServiceHelper.getUserInfo(userId, token);
+        }
 
         if (userInfo == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
+
+        // businessHours가 빈 문자열이면 null로 변경
+        String businessHours = StringUtils.hasText(request.getBusinessHours()) ?
+                request.getBusinessHours() : null;
 
         Shop shop = Shop.builder()
                 .ownerUserId(userId)
@@ -103,11 +120,17 @@ public class ShopService {
                 .minOrderAmount(request.getMinOrderAmount())
                 .deliveryFee(request.getDeliveryFee())
                 .freeDeliveryAmount(request.getFreeDeliveryAmount())
-                .businessHours(request.getBusinessHours())
+                .businessHours(businessHours)  // null 허용
                 .createdBy(userId)
                 .build();
 
-        shop = shopRepository.save(shop);
+        try {
+            shop = shopRepository.save(shop);
+            log.info("Shop created successfully: {}", shop.getId());
+        } catch (Exception e) {
+            log.error("Failed to create shop for user {}: {}", userId, e.getMessage(), e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "상점 생성에 실패했습니다.");
+        }
 
         return ShopDto.ShopInfo.builder()
                 .id(shop.getId())
@@ -135,7 +158,10 @@ public class ShopService {
         Shop shop = shopRepository.findByIdAndIsActiveTrue(shopId)
                 .orElseThrow(() -> new CustomException(ErrorCode.SHOP_NOT_FOUND));
 
-        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
+        UserServiceDto.UserInfo userInfo = null;
+        if (userId != null && token != null && !token.trim().isEmpty()) {
+            userInfo = userServiceHelper.getUserInfo(userId, token);
+        }
 
         // 상점 소유자이거나 ADMIN만 수정 가능
         if (!shop.getOwnerUserId().equals(userId) &&
@@ -160,16 +186,28 @@ public class ShopService {
             shop.setFreeDeliveryAmount(request.getFreeDeliveryAmount());
         }
         if (request.getBusinessHours() != null) {
-            shop.setBusinessHours(request.getBusinessHours());
+            // 빈 문자열이면 null로 설정
+            shop.setBusinessHours(StringUtils.hasText(request.getBusinessHours()) ?
+                    request.getBusinessHours() : null);
         }
         if (request.getIsActive() != null) {
             shop.setIsActive(request.getIsActive());
         }
 
         shop.setUpdatedBy(userId);
-        shop = shopRepository.save(shop);
 
-        UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+        try {
+            shop = shopRepository.save(shop);
+            log.info("Shop updated successfully: {}", shop.getId());
+        } catch (Exception e) {
+            log.error("Failed to update shop {}: {}", shopId, e.getMessage(), e);
+            throw new CustomException(ErrorCode.INTERNAL_SERVER_ERROR, "상점 정보 수정에 실패했습니다.");
+        }
+
+        UserServiceDto.UserInfo ownerInfo = null;
+        if (shop.getOwnerUserId() != null && token != null && !token.trim().isEmpty()) {
+            ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+        }
         long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
         return ShopDto.ShopInfo.builder()
@@ -195,7 +233,12 @@ public class ShopService {
 
     public List<ShopDto.ShopInfo> getMyShops(String token, Long userId) {
         List<Shop> shops = shopRepository.findByOwnerUserIdAndIsActiveTrue(userId);
-        UserServiceDto.UserInfo userInfo = userServiceHelper.getUserInfo(userId, token);
+        UserServiceDto.UserInfo userInfo = null;
+        if (userId != null && token != null && !token.trim().isEmpty()) {
+            userInfo = userServiceHelper.getUserInfo(userId, token);
+        }
+
+        final UserServiceDto.UserInfo finalUserInfo = userInfo; // final 변수로 만들어서 람다에서 사용
 
         return shops.stream()
                 .map(shop -> {
@@ -204,7 +247,7 @@ public class ShopService {
                     return ShopDto.ShopInfo.builder()
                             .id(shop.getId())
                             .ownerUserId(shop.getOwnerUserId())
-                            .ownerUsername(userInfo != null ? userInfo.getUsername() : "알 수 없음")
+                            .ownerUsername(finalUserInfo != null ? finalUserInfo.getUsername() : "알 수 없음")
                             .name(shop.getName())
                             .description(shop.getDescription())
                             .businessNumber(shop.getBusinessNumber())
@@ -227,7 +270,10 @@ public class ShopService {
     public Page<ShopDto.ShopInfo> searchShops(String keyword, Pageable pageable, String token) {
         return shopRepository.findByNameContainingAndIsActiveTrueOrderByCreatedAtDesc(keyword, pageable)
                 .map(shop -> {
-                    UserServiceDto.UserInfo ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+                    UserServiceDto.UserInfo ownerInfo = null;
+                    if (shop.getOwnerUserId() != null && token != null && !token.trim().isEmpty()) {
+                        ownerInfo = userServiceHelper.getUserInfo(shop.getOwnerUserId(), token);
+                    }
                     long productCount = productRepository.countByShopAndStatus(shop, Product.ProductStatus.ACTIVE);
 
                     return ShopDto.ShopInfo.builder()

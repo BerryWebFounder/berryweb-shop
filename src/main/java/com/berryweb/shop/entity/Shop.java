@@ -62,8 +62,8 @@ public class Shop {
     @Column(precision = 10, scale = 2)
     private BigDecimal freeDeliveryAmount;
 
-    // 영업시간 (JSON 형태로 저장)
-    @Column(columnDefinition = "JSON")
+    // 영업시간 - MariaDB 호환성을 위해 TEXT로 변경하고 NULL 허용
+    @Column(columnDefinition = "TEXT")
     private String businessHours;
 
     @CreatedDate

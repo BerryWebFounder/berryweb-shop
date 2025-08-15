@@ -65,7 +65,7 @@ public class ShopController {
     @PostMapping
     public ResponseEntity<ApiResponse<ShopDto.ShopInfo>> createShop(
             @Valid @RequestBody ShopDto.CreateShopRequest request,
-            @RequestHeader("Authorization") String token, // 필수 유지
+            @RequestHeader(value = "Authorization", required = false) String token, // TODO
             @CurrentUser Long userId) {
 
         String authToken = token.replace("Bearer ", "");

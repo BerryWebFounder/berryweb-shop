@@ -38,11 +38,16 @@ public class SecurityConfig {
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(jwtAccessDeniedHandler))
                 .authorizeHttpRequests(auth -> auth
+                        // 공개 엔드포인트
                         .requestMatchers("/v1/shops", "/v1/shops/**",
                                 "/v1/products/**", "/v1/products/search",
                                 "/v1/products/featured").permitAll()
+                        // 시스템 엔드포인트
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // 디버그 엔드포인트 (개발환경에서만 사용)
+                        .requestMatchers("/debug/**").permitAll()
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

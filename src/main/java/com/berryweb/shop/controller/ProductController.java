@@ -33,7 +33,6 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success(products));
     }
 
-    // 상품 생성은 인증 필요하므로 required = true 유지
     @PostMapping
     public ResponseEntity<ApiResponse<ProductDto.ProductInfo>> createProduct(
             @PathVariable Long shopId,

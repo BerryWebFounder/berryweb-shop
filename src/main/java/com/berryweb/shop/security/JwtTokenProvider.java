@@ -47,6 +47,26 @@ public class JwtTokenProvider {
             throw new IllegalArgumentException("UserPrincipal cannot be null");
         }
 
+        // Long 타입인 경우
+        if (userPrincipal instanceof Long) {
+            return (Long) userPrincipal;
+        }
+
+        // Number 타입인 경우
+        if (userPrincipal instanceof Number) {
+            return ((Number) userPrincipal).longValue();
+        }
+
+        // String 타입인 경우
+        if (userPrincipal instanceof String) {
+            try {
+                return Long.parseLong((String) userPrincipal);
+            } catch (NumberFormatException e) {
+                log.error("Failed to parse user ID from string: {}", userPrincipal, e);
+                throw new IllegalArgumentException("Cannot parse user ID from string: " + userPrincipal, e);
+            }
+        }
+
         // CustomUserPrincipal 타입인 경우
         try {
             // 리플렉션을 사용해서 getId() 메서드 호출
@@ -68,6 +88,11 @@ public class JwtTokenProvider {
 
     // 토큰에서 사용자 ID 추출
     public Long getUserIdFromToken(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            log.error("Token is null or empty");
+            return null;
+        }
+
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(getSigningKey())
@@ -75,9 +100,40 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            return Long.parseLong(claims.getSubject());
-        } catch (Exception e) {
-            log.error("Error extracting user ID from token", e);
+            String subject = claims.getSubject();
+            log.debug("Token subject: {}", subject);
+
+            if (subject == null || subject.trim().isEmpty()) {
+                log.error("Token subject is null or empty");
+                return null;
+            }
+
+            try {
+                Long userId = Long.parseLong(subject.trim());
+                log.debug("Successfully parsed user ID: {}", userId);
+                return userId;
+            } catch (NumberFormatException e) {
+                log.error("Failed to parse user ID from token subject: '{}'. Not a valid number.", subject, e);
+                return null;
+            }
+
+        } catch (SecurityException ex) {
+            log.error("Invalid JWT signature: {}", ex.getMessage());
+            return null;
+        } catch (MalformedJwtException ex) {
+            log.error("Invalid JWT token: {}", ex.getMessage());
+            return null;
+        } catch (ExpiredJwtException ex) {
+            log.error("Expired JWT token: {}", ex.getMessage());
+            return null;
+        } catch (UnsupportedJwtException ex) {
+            log.error("Unsupported JWT token: {}", ex.getMessage());
+            return null;
+        } catch (IllegalArgumentException ex) {
+            log.error("JWT claims string is empty: {}", ex.getMessage());
+            return null;
+        } catch (Exception ex) {
+            log.error("Unexpected JWT token parsing error: {}", ex.getMessage(), ex);
             return null;
         }
     }
